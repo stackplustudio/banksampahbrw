@@ -1,22 +1,24 @@
 FROM node:20-alpine
 
 # Install OpenSSL (wajib untuk Prisma)
+WORKDIR /app
 RUN apk add --no-cache openssl
 
-WORKDIR /app
-
-# Salin seluruh file proyek termasuk workspace packages
+# Salin seluruh file proyek
 COPY . .
 
-# Hapus validasi OS Windows dan lockfile lama agar ter-generate ulang dengan benar untuk Linux
+# Hapus validasi OS Windows dan lockfile lama
 RUN npm pkg delete packageManager
 RUN rm -f pnpm-lock.yaml
 
-# Install pnpm versi terbaru
-RUN npm install -g pnpm
+# Install pnpm versi terbaru secara global dengan hak akses penuh
+RUN npm install -g pnpm --unsafe-perm=true
 
-# Install semua dependencies workspace secara penuh (tanpa ignore-scripts agar class-validator ikut terpasang)
-RUN pnpm install --no-frozen-lockfile
+# Izinkan pnpm mengeksekusi semua script native packages (seperti parcel/watcher) tanpa diblokir
+RUN pnpm config set supported-architectures --json '{"os": ["linux"], "cpu": ["x64"]}'
+
+# Install dependencies secara penuh agar class-validator dan seluruh workspace terbawa
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
 # Generate Prisma Client versi 5
 RUN npx prisma@5 generate --schema=packages/database/prisma/schema.prisma
