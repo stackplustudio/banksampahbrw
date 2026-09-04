@@ -1,0 +1,37 @@
+$ignoreContent = @"
+# Dependencies
+node_modules
+.pnp
+.pnp.*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Builds & Cache
+.turbo
+dist
+.next
+out
+build
+.vercel
+
+# Database
+/generated/prisma
+*.db
+*.sqlite
+
+# Logs
+coverage
+*.log
+.pnpm-debug.log*
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+"@
+
+Set-Content -Path ".gitignore" -Value $ignoreContent -Force
