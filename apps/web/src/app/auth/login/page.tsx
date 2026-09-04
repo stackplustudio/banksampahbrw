@@ -24,7 +24,16 @@ export default function LoginPage() {
       
       if (response.data.access_token) {
         Cookies.set('token', response.data.access_token, { expires: 7 });
-        router.push('/dashboard/admin');
+        
+        // Ambil data role dari respons backend (sesuaikan strukturnya jika berbeda, misal response.data.role)
+        const role = response.data.user?.role || response.data.role;
+
+        // Redirect dinamis berdasarkan role
+        if (role === 'ADMIN' || role === 'admin') {
+          router.push('/dashboard/admin');
+        } else {
+          router.push('/dashboard/nasabah');
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Email atau kata sandi tidak valid.');
