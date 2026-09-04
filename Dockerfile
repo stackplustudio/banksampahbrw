@@ -8,20 +8,21 @@ WORKDIR /app
 # Salin seluruh file
 COPY . .
 
-# Hapus validasi packageManager OS Windows
+# Hapus validasi OS Windows
 RUN npm pkg delete packageManager
-
-# Hapus lockfile Windows
 RUN rm -f pnpm-lock.yaml
 
-# Install pnpm versi terbaru
+# Install pnpm
 RUN npm install -g pnpm
 
-# Install dependencies dan ABAIKAN script pihak ketiga (Solusi Error Parcel)
-RUN pnpm install --ignore-scripts
+# MATIKAN fitur security strict pnpm secara global
+RUN pnpm config set ignore-scripts true
 
-# Generate Prisma Client
-RUN pnpm --filter database dlx prisma generate
+# Install dependencies (akan menggunakan versi di package.json milikmu dengan aman)
+RUN pnpm install
+
+# Generate Prisma menggunakan versi LOKAL (bukan dlx yang mendownload versi Beta)
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 # Build API
 RUN pnpm --filter api build
