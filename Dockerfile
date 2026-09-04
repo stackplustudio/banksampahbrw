@@ -11,8 +11,8 @@ RUN npm install -g pnpm
 # Salin seluruh file proyek
 COPY . .
 
-# Install dependencies dengan flag untuk mengabaikan lockfile OS-mismatch
-RUN pnpm install --no-frozen-lockfile
+# Hapus lockfile bawaan Windows agar pnpm membuat ulang versi Linux, lalu install
+RUN rm -f pnpm-lock.yaml && pnpm install
 
 # Generate Prisma Client
 RUN pnpm --filter database dlx prisma generate
