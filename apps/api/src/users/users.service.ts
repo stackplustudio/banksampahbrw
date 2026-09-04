@@ -21,23 +21,23 @@ export class UsersService {
     const role = (createUserDto.role as Role) || Role.NASABAH;
     let generatedNasabahId = createUserDto.nasabahId;
 
-    // Logika Auto-Generate ID (Khusus Nasabah)
+    // Logika Auto-Generate ID yang lebih aman menggunakan orderBy descending
     if (role === Role.NASABAH && !generatedNasabahId) {
-      const allNasabah = await this.prisma.user.findMany({
+      const lastNasabah = await this.prisma.user.findFirst({
         where: { role: Role.NASABAH, nasabahId: { not: null } },
+        orderBy: { nasabahId: 'desc' },
         select: { nasabahId: true }
       });
 
-      let maxId = 0;
-      for (const user of allNasabah) {
-        if (user.nasabahId) {
-          const num = parseInt(user.nasabahId.replace('BSB-', ''), 10);
-          if (!isNaN(num) && num > maxId) maxId = num;
+      let nextIdNum = 1;
+      if (lastNasabah && lastNasabah.nasabahId) {
+        const num = parseInt(lastNasabah.nasabahId.replace('BSB-', ''), 10);
+        if (!isNaN(num)) {
+          nextIdNum = num + 1;
         }
       }
       
-      // Format menjadi BSB-001, BSB-012, dst.
-      generatedNasabahId = `BSB-${String(maxId + 1).padStart(3, '0')}`;
+      generatedNasabahId = `BSB-${String(nextIdNum).padStart(3, '0')}`;
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password || 'password123', 10);
