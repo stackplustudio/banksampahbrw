@@ -2,10 +2,9 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3001',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // Jika di Vercel, akan pakai URL Render. Jika lokal, otomatis ke 3001.
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  withCredentials: true,
 });
 
 // 1. Menyelipkan token ke setiap request (Bawaan)

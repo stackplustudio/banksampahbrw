@@ -1,16 +1,26 @@
-// apps/api/src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Tambahkan izin CORS agar Next.js bisa berkomunikasi dengan API
+  // CORS dinamis: mengizinkan Vercel dan localhost
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3000'
+    ],
     credentials: true,
   });
 
-  await app.listen(3001);
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  // Gunakan PORT dari environment (wajib untuk platform hosting) atau 3001 untuk lokal
+  const port = process.env.PORT || 3001;
+  
+  // Bind ke 0.0.0.0 sangat penting untuk platform container seperti Render
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();
