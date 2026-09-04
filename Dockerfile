@@ -11,8 +11,8 @@ RUN npm install -g pnpm
 # Salin seluruh file proyek
 COPY . .
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies dengan flag untuk mengabaikan lockfile OS-mismatch
+RUN pnpm install --no-frozen-lockfile
 
 # Generate Prisma Client
 RUN pnpm --filter database dlx prisma generate
@@ -20,7 +20,7 @@ RUN pnpm --filter database dlx prisma generate
 # Build API backend
 RUN pnpm --filter api build
 
-# Ekspos port yang akan digunakan
+# Ekspos port
 EXPOSE 3001
 
 # Perintah untuk menjalankan server
