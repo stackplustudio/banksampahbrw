@@ -21,8 +21,8 @@ RUN pnpm config set ignore-scripts true
 # Install dependencies (akan menggunakan versi di package.json milikmu dengan aman)
 RUN pnpm install
 
-# Generate Prisma menggunakan versi LOKAL (bukan dlx yang mendownload versi Beta)
-RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+# Generate Prisma menggunakan versi v5 yang stabil
+RUN npx prisma@5 generate --schema=packages/database/prisma/schema.prisma
 
 # Build API
 RUN pnpm --filter api build
