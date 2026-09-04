@@ -5,14 +5,20 @@ RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Salin seluruh file proyek
 COPY . .
 
-# Hapus lockfile bawaan Windows agar pnpm membuat ulang versi Linux, lalu install
-RUN rm -f pnpm-lock.yaml && pnpm install
+# Hapus field packageManager di package.json yang menyebabkan konflik verifikasi OS
+RUN npm pkg delete packageManager
+
+# Hapus lockfile bawaan Windows
+RUN rm -f pnpm-lock.yaml
+
+# Install pnpm secara global
+RUN npm install -g pnpm
+
+# Install dependencies untuk Linux Alpine
+RUN pnpm install
 
 # Generate Prisma Client
 RUN pnpm --filter database dlx prisma generate
