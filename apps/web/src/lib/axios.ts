@@ -8,7 +8,7 @@ export const api = axios.create({
   },
 });
 
-// Otomatis menempelkan JWT Token ke setiap request ke backend
+// 1. Menyelipkan token ke setiap request (Bawaan)
 api.interceptors.request.use((config) => {
   const token = Cookies.get('token');
   if (token) {
@@ -16,3 +16,21 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// 2. [BARU] Menangani Error 401 secara otomatis
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Jika backend merespons dengan 401 (Unauthorized)
+    if (error.response && error.response.status === 401) {
+      // Hapus token yang rusak/kadaluarsa dari browser
+      Cookies.remove('token');
+      
+      // Paksa alihkan pengguna ke halaman login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

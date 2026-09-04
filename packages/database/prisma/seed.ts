@@ -4,22 +4,51 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Kita enkripsi password-nya di sini sebelum masuk ke database
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPasswordAdmin = await bcrypt.hash('admin123', 10);
+  const hashedPasswordNasabah = await bcrypt.hash('nasabah123', 10);
 
+  // 1. Akun Super Admin
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@stackplus.studio' },
-    update: {
-      password: hashedPassword, // Update password lama dengan yang sudah di-hash
-    },
+    where: { email: 'admin@banksampah.com' },
+    update: {},
     create: {
-      email: 'admin@stackplus.studio',
-      name: 'Budi Cahyono',
-      password: hashedPassword,
+      email: 'admin@banksampah.com',
+      name: 'Admin Pengelola',
+      password: hashedPasswordAdmin,
       role: 'ADMIN',
     },
   });
-  console.log('✅ Admin seeded with hashed password:', admin.email);
+
+  // 2. Akun Nasabah (Sesuai dengan Data Desain)
+  const nasabah = await prisma.user.upsert({
+    where: { email: 'sitiaminah@gmail.com' },
+    update: {},
+    create: {
+      nasabahId: 'BSB-001',
+      email: 'sitiaminah@gmail.com',
+      name: 'Siti Aminah',
+      password: hashedPasswordNasabah,
+      phone: '081378347627',
+      address: 'Banjarum RT01/RW07',
+      role: 'NASABAH',
+    },
+  });
+
+  // 3. Master Data Jenis Sampah (Harga Hari Ini)
+  await prisma.wasteType.createMany({
+    data: [
+      { name: 'Plastik', category: 'ANORGANIK', pricePerKg: 3500 },
+      { name: 'Kardus', category: 'ANORGANIK', pricePerKg: 2000 },
+      { name: 'Kertas', category: 'ANORGANIK', pricePerKg: 1500 },
+      { name: 'Aluminium', category: 'ANORGANIK', pricePerKg: 12000 },
+      { name: 'Kaca', category: 'ANORGANIK', pricePerKg: 500 },
+      { name: 'Organik', category: 'ORGANIK', pricePerKg: 800 },
+    ],
+    skipDuplicates: true,
+  });
+
+  console.log('Database Seeding Selesai:');
+  console.log({ admin, nasabah });
 }
 
 main()

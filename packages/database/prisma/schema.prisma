@@ -3,17 +3,110 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  NASABAH
+}
+
+enum StatusNasabah {
+  AKTIF
+  NONAKTIF
+}
+
+enum KategoriSampah {
+  ORGANIK
+  ANORGANIK
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   
-  name      String?
-  role      String   @default("ADMIN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String         @id @default(cuid())
+  nasabahId        String?        @unique // Format kustom seperti "BSB-001"
+  name             String
+  email            String         @unique
+  password         String
+  phone            String?
+  address          String?
+  avatar           String?        // URL Foto profil
+  role             Role           @default(NASABAH)
+  status           StatusNasabah  @default(AKTIF)
+  balance          Float          @default(0) // Total saldo nasabah saat ini
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relasi sebagai Nasabah
+  deposits         Deposit[]      @relation("NasabahDeposits")
+  withdrawals      Withdrawal[]   @relation("NasabahWithdrawals")
+  notifications    Notification[] @relation("UserNotifications")
+
+  // Relasi sebagai Admin yang memproses transaksi
+  adminDeposits    Deposit[]      @relation("AdminDeposits")
+  adminWithdrawals Withdrawal[]   @relation("AdminWithdrawals")
+}
+
+model WasteType {
+  id            String         @id @default(cuid())
+  name          String         // Contoh: Plastik, Kardus, Kaca
+  category      KategoriSampah
+  pricePerKg    Float
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  depositItems  DepositItem[]
+}
+
+model Deposit {
+  id            String         @id @default(cuid())
+  totalWeight   Float          
+  totalAmount   Float          
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  nasabahId     String
+  nasabah       User           @relation("NasabahDeposits", fields: [nasabahId], references: [id])
+
+  adminId       String
+  admin         User           @relation("AdminDeposits", fields: [adminId], references: [id])
+
+  items         DepositItem[]
+}
+
+model DepositItem {
+  id            String         @id @default(cuid())
+  weight        Float
+  subtotal      Float
+  
+  depositId     String
+  deposit       Deposit        @relation(fields: [depositId], references: [id], onDelete: Cascade)
+  
+  wasteTypeId   String
+  wasteType     WasteType      @relation(fields: [wasteTypeId], references: [id])
+}
+
+model Withdrawal {
+  id               String      @id @default(cuid())
+  amount           Float       
+  remainingBalance Float       // Snapshot sisa saldo
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  nasabahId        String
+  nasabah          User        @relation("NasabahWithdrawals", fields: [nasabahId], references: [id])
+
+  adminId          String
+  admin            User        @relation("AdminWithdrawals", fields: [adminId], references: [id])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  title       String   
+  message     String   
+  amount      String?  // Dibuat opsional/string untuk mempermudah format "+ Rp 18.200"
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
