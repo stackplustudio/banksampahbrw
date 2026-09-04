@@ -7,11 +7,8 @@ async function bootstrap() {
   
   // CORS dinamis: mengizinkan Vercel dan localhost
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // Untuk testing lokal
-      'https://banksampahbrw.vercel.app', // URL Vercel tanpa garis miring di belakang
-      process.env.FRONTEND_URL, // Opsional jika kamu pakai env variable
-    ],
+    origin: true, // Mengizinkan semua origin secara dinamis
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
