@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
-import { Role, StatusNasabah } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -21,11 +21,11 @@ export class UsersService {
     const role = (createUserDto.role as Role) || Role.NASABAH;
     let generatedNasabahId = createUserDto.nasabahId;
 
-    // Logika Auto-Generate ID yang lebih aman menggunakan orderBy descending
+    // Logika Auto-Generate ID (Diurutkan berdasarkan data terbaru agar aman dari bug sorting string)
     if (role === Role.NASABAH && !generatedNasabahId) {
       const lastNasabah = await this.prisma.user.findFirst({
         where: { role: Role.NASABAH, nasabahId: { not: null } },
-        orderBy: { nasabahId: 'desc' },
+        orderBy: { createdAt: 'desc' }, // Perbaikan: Gunakan waktu pembuatan
         select: { nasabahId: true }
       });
 
@@ -57,7 +57,6 @@ export class UsersService {
   }
 
   async findAll() {
-    // Ambil data User beserta agregasi transaksinya
     const users = await this.prisma.user.findMany({
       where: { role: 'NASABAH' },
       select: {
@@ -77,7 +76,6 @@ export class UsersService {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Kalkulasi Total Berat dan Total Harga per nasabah
     return users.map(user => {
       const totalSetoranKg = user.deposits.reduce((sum, d) => sum + d.totalWeight, 0);
       const totalHargaRp = user.deposits.reduce((sum, d) => sum + d.totalAmount, 0);

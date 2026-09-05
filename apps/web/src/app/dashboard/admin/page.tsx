@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/axios';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Users, Scale, Wallet, ArrowDownRight, Calendar } from 'lucide-react';
 
-const COLORS = ['#3b82f6', '#92400e', '#fcd34d', '#6b7280', '#d1d5db', '#84cc16', '#14b8a6'];
+const COLORS = ['#3b82f6', '#92400e', '#fcd34d', '#6b7280', '#e5e7eb', '#22c55e', '#14b8a6'];
 
 export default function AdminBerandaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
-  // State Filter Tanggal (Default: 1 bulan terakhir)
   const today = new Date();
   const lastMonth = new Date(today);
   lastMonth.setDate(lastMonth.getDate() - 30);
@@ -37,23 +37,20 @@ export default function AdminBerandaPage() {
   }, [startDate, endDate]);
 
   if (!data && loading) return <div className="p-8 text-center text-gray-500">Memuat dasbor...</div>;
-  
   const { summary, chartData } = data || {};
 
-  // Custom Tooltip Pie Chart format: "plastik - 2,8kg"
   const CustomPieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
         <div className="bg-white p-2 border border-gray-200 shadow-sm rounded-md text-sm font-medium">
-          {data.name} - {data.weight}kg
+          {data.name} {data.weight} Kg
         </div>
       );
     }
     return null;
   };
 
-  // Custom Tooltip Bar Chart format exact berat (kg)
   const CustomBarTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -66,154 +63,148 @@ export default function AdminBerandaPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-gray-500 text-sm">Selamat datang kembali,</p>
-          <h1 className="text-3xl font-bold font-heading text-gray-900">Admin Pengelola</h1>
+    <div className="max-w-7xl mx-auto flex flex-col min-h-full pb-8">
+      <div className="space-y-6 flex-1">
+        
+        {/* Hero Card Saldo */}
+        <div className="bg-[#004d33] text-white rounded-xl p-8 shadow-md">
+          <p className="text-green-100 text-sm mb-2 font-medium">Saldo Saat Ini</p>
+          <h2 className="text-4xl font-bold tracking-tight">
+            Rp. {summary?.saldoSistemSaatIni?.toLocaleString('id-ID') || 0}
+          </h2>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-600">Admin Pengelola</span>
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">
-            AD
+
+        {/* Ringkasan Header & Filter */}
+        <div className="flex justify-between items-end mt-8 border-b border-gray-100 pb-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Ringkasan Bank Sampah</h3>
+            <p className="text-sm text-gray-500">Pantau data nasabah dan transaksi pada periode terpilih</p>
+          </div>
+          <div className="flex gap-2 items-center bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm text-sm">
+            <Calendar size={16} className="text-gray-400" />
+            <Input 
+              type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} 
+              className="h-7 border-none shadow-none text-sm w-[110px] px-0 focus-visible:ring-0"
+            />
+            <span className="text-gray-400">-</span>
+            <Input 
+              type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} 
+              className="h-7 border-none shadow-none text-sm w-[110px] px-0 focus-visible:ring-0"
+            />
           </div>
         </div>
-      </div>
 
-      <div className="bg-primary text-white rounded-xl p-6 shadow-sm flex flex-col justify-center">
-        <p className="text-green-100 text-sm font-medium mb-1">Saldo Saat Ini</p>
-        <h2 className="text-4xl font-bold">
-          Rp. {summary?.saldoSistemSaatIni?.toLocaleString('id-ID') || 0}
-        </h2>
-      </div>
-
-      <div className="flex justify-between items-center mt-8">
-        <div>
-          <h3 className="text-xl font-bold font-heading text-gray-900">Ringkasan Bank Sampah</h3>
-          <p className="text-sm text-gray-500">Pantau data nasabah dan transaksi pada periode terpilih</p>
-        </div>
-        <div className="flex gap-2 items-center bg-white border border-gray-200 p-1.5 rounded-lg shadow-sm">
-          <Input 
-            type="date" 
-            value={startDate} 
-            onChange={(e) => setStartDate(e.target.value)} 
-            className="h-8 border-none shadow-none text-sm w-32"
-          />
-          <span className="text-gray-400">-</span>
-          <Input 
-            type="date" 
-            value={endDate} 
-            onChange={(e) => setEndDate(e.target.value)} 
-            className="h-8 border-none shadow-none text-sm w-32"
-          />
-        </div>
-      </div>
-
-      {loading && data ? (
-         <div className="text-center text-sm text-gray-500 py-4">Memperbarui data...</div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Card Nasabah */}
-            <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
-              <div className="bg-[#004d33] text-white p-3 flex items-center gap-2 text-sm font-medium">
-                <span className="text-lg">👥</span> Nasabah
+        {loading && data ? (
+           <div className="text-center text-sm text-gray-500 py-4">Memperbarui data...</div>
+        ) : (
+          <>
+            {/* 4 Cards Statistik Sesuai Figma */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
+                <div className="bg-[#004d33] text-white p-3.5 flex items-center gap-2 text-sm font-medium">
+                  <Users size={16} /> Nasabah
+                </div>
+                <div className="p-5 flex-1">
+                  <div className="text-3xl font-bold text-gray-900">{summary?.totalNasabah || 0}</div>
+                  <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">Total Nasabah yang Melakukan Setoran</p>
+                </div>
               </div>
-              <div className="p-4 flex-1">
-                <div className="text-3xl font-bold font-heading text-gray-900">{summary?.totalNasabah || 0}</div>
-                <p className="text-[11px] text-gray-400 mt-1 leading-tight">Total Nasabah yang Melakukan Setoran</p>
+
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
+                <div className="bg-blue-500 text-white p-3.5 flex items-center gap-2 text-sm font-medium">
+                  <Scale size={16} /> Setoran
+                </div>
+                <div className="p-5 flex-1">
+                  <div className="text-3xl font-bold text-gray-900">{summary?.totalBeratSetoran || 0}kg</div>
+                  <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">Total Setoran Sampah</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
+                <div className="bg-[#16a34a] text-white p-3.5 flex items-center gap-2 text-sm font-medium">
+                  <Wallet size={16} /> Saldo Setoran
+                </div>
+                <div className="p-5 flex-1">
+                  <div className="text-3xl font-bold text-gray-900">Rp. {summary?.totalSaldoSetoran?.toLocaleString('id-ID') || 0}</div>
+                  <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">Total Saldo Setoran</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
+                <div className="bg-orange-500 text-white p-3.5 flex items-center gap-2 text-sm font-medium">
+                  <ArrowDownRight size={16} /> Saldo Penarikan
+                </div>
+                <div className="p-5 flex-1">
+                  <div className="text-3xl font-bold text-gray-900">Rp. {summary?.totalSaldoPenarikan?.toLocaleString('id-ID') || 0}</div>
+                  <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">Total Saldo yang Ditarik</p>
+                </div>
               </div>
             </div>
 
-            {/* Card Setoran */}
-            <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
-              <div className="bg-blue-500 text-white p-3 flex items-center gap-2 text-sm font-medium">
-                <span className="text-lg">⚖️</span> Setoran
-              </div>
-              <div className="p-4 flex-1">
-                <div className="text-3xl font-bold font-heading text-gray-900">{summary?.totalBeratSetoran || 0}kg</div>
-                <p className="text-[11px] text-gray-400 mt-1 leading-tight">Total Setoran Sampah</p>
-              </div>
-            </div>
-
-            {/* Card Saldo Setoran */}
-            <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
-              <div className="bg-[#004d33] text-white p-3 flex items-center gap-2 text-sm font-medium">
-                <span className="text-lg">💰</span> Saldo Setoran
-              </div>
-              <div className="p-4 flex-1">
-                <div className="text-3xl font-bold font-heading text-gray-900">Rp. {summary?.totalSaldoSetoran?.toLocaleString('id-ID') || 0}</div>
-                <p className="text-[11px] text-gray-400 mt-1 leading-tight">Total Saldo Setoran</p>
-              </div>
-            </div>
-
-            {/* Card Saldo Penarikan */}
-            <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col">
-              <div className="bg-orange-500 text-white p-3 flex items-center gap-2 text-sm font-medium">
-                <span className="text-lg">💳</span> Saldo Penarikan
-              </div>
-              <div className="p-4 flex-1">
-                <div className="text-3xl font-bold font-heading text-gray-900">Rp. {summary?.totalSaldoPenarikan?.toLocaleString('id-ID') || 0}</div>
-                <p className="text-[11px] text-gray-400 mt-1 leading-tight">Total Saldo yang Ditarik</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <Card className="shadow-sm border-gray-100 p-6">
-              <div className="text-xs text-gray-500 mb-4">(Kg)</div>
-              <div className="h-64 w-full">
-                {chartData?.monthly?.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData.monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                      <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'transparent' }} />
-                      <Bar dataKey="weight" fill="#006633" radius={[4, 4, 0, 0]} barSize={32} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">Tidak ada data setoran</div>
-                )}
-              </div>
-            </Card>
-
-            <Card className="shadow-sm border-gray-100 p-6">
-              <h3 className="text-lg font-bold font-heading text-gray-900 mb-4">Komposisi Jenis Sampah</h3>
-              <div className="flex items-center h-64">
-                <div className="w-1/2 h-full relative">
-                  {chartData?.composition?.length > 0 ? (
+            {/* Area Grafik */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 p-6 flex flex-col">
+                <div className="text-xs text-gray-500 mb-6 font-medium">(Kg)</div>
+                <div className="h-64 w-full flex-1">
+                  {chartData?.monthly?.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={chartData.composition} cx="50%" cy="50%" innerRadius={0} outerRadius={80} dataKey="weight" stroke="none">
-                          {chartData.composition.map((_: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomPieTooltip />} />
-                      </PieChart>
+                      <BarChart data={chartData.monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dx={-10} />
+                        <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#f3f4f6' }} />
+                        <Bar dataKey="weight" fill="#004d33" radius={[4, 4, 0, 0]} barSize={28} />
+                      </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-gray-400 text-center">Data kosong</div>
+                    <div className="flex h-full items-center justify-center text-sm text-gray-400 border-2 border-dashed border-gray-100 rounded-lg">Tidak ada data setoran</div>
                   )}
                 </div>
-                
-                <div className="w-1/2 flex flex-col gap-3 pl-4 overflow-y-auto max-h-full">
-                  {chartData?.composition?.map((item: any, index: number) => (
-                    <div key={item.name} className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                        <span className="text-gray-600 truncate max-w-[80px]" title={item.name}>{item.name}</span>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-[0_2px_10px_rgb(0,0,0,0.04)] border border-gray-100 p-6 flex flex-col">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Komposisi Jenis Sampah</h3>
+                <div className="flex items-center h-64 flex-1">
+                  <div className="w-1/2 h-full relative">
+                    {chartData?.composition?.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={chartData.composition} cx="50%" cy="50%" innerRadius={0} outerRadius={85} dataKey="weight" stroke="white" strokeWidth={2}>
+                            {chartData.composition.map((_: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomPieTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-sm text-gray-400 border-2 border-dashed border-gray-100 rounded-lg">Data kosong</div>
+                    )}
+                  </div>
+                  
+                  <div className="w-1/2 flex flex-col gap-4 pl-6 overflow-y-auto max-h-full">
+                    {chartData?.composition?.map((item: any, index: number) => (
+                      <div key={item.name} className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                          <span className="text-gray-600 font-medium">{item.name}</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{item.weight} Kg</span>
                       </div>
-                      <span className="font-medium text-gray-900 whitespace-nowrap">{item.weight} Kg</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </Card>
-          </div>
-        </>
-      )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Footer Copyright Sesuai Figma */}
+      <div className="pt-10 text-center">
+        <p className="text-[11px] text-gray-400 font-medium tracking-wide">
+          © 2026 Bank Sampah Sobat Banjar Arum Berseri. Semua hak dilindungi.
+        </p>
+      </div>
     </div>
   );
 }

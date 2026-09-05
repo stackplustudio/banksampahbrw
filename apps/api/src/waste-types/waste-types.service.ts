@@ -18,10 +18,16 @@ export class WasteTypesService {
     });
 
     return wastes.map(waste => {
-      const totalWeight = waste.depositItems.reduce((sum, item) => sum + item.weight, 0);
-      const totalAmount = waste.depositItems.reduce((sum, item) => sum + item.subtotal, 0);
+      // Pastikan konversi ke Number agar aman dari tipe data desimal/string
+      const totalWeight = waste.depositItems.reduce((sum, item) => sum + Number(item.weight), 0);
+      const totalAmount = waste.depositItems.reduce((sum, item) => sum + Number(item.subtotal), 0);
+      
       const { depositItems, ...rest } = waste;
-      return { ...rest, totalWeight, totalAmount };
+      return { 
+        ...rest, 
+        totalWeight: Number(totalWeight.toFixed(2)), // Membulatkan maksimal 2 desimal
+        totalAmount 
+      };
     });
   }
 

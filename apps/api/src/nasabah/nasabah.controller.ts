@@ -19,7 +19,7 @@ export class NasabahController {
 
   @Get('profile')
   getProfile(@Request() req: any) {
-    // Memanfaatkan dashboard function untuk info dasar + request info tambahan dari DB
+    // Memanfaatkan dashboard function untuk info dasar
     return this.nasabahService.getDashboard(req.user.id); 
   }
 

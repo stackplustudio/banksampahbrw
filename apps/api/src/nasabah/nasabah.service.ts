@@ -39,16 +39,20 @@ export class NasabahService {
   }
 
   async getHistory(userId: string) {
-    const deposits = await this.prisma.deposit.findMany({
-      where: { nasabahId: userId },
-      include: { items: { include: { wasteType: true } } }
-    });
+    // Ambil data menggunakan Promise.all untuk eksekusi yang lebih cepat & paralel
+    const [deposits, withdrawals] = await Promise.all([
+      this.prisma.deposit.findMany({
+        where: { nasabahId: userId },
+        include: { items: { include: { wasteType: true } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.withdrawal.findMany({
+        where: { nasabahId: userId },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
 
-    const withdrawals = await this.prisma.withdrawal.findMany({
-      where: { nasabahId: userId }
-    });
-
-    // Format dan Gabungkan Transaksi
+    // Format Data Transaksi
     const formattedDeposits = deposits.map(d => ({
       id: d.id,
       type: 'SETORAN',
@@ -65,13 +69,21 @@ export class NasabahService {
       items: [{ name: 'Penarikan tunai', weight: 0 }]
     }));
 
+    // Gabungkan dan urutkan kembali untuk memastikan sorting absolut berdasarkan waktu terbaru
     return [...formattedDeposits, ...formattedWithdrawals].sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
   async updateProfile(userId: string, data: { phone: string; address: string }) {
+    // Memastikan record user masih ada sebelum melakukan update
+    const exists = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!exists) throw new NotFoundException('User tidak valid');
+
     return this.prisma.user.update({
       where: { id: userId },
-      data: { phone: data.phone, address: data.address },
+      data: { 
+        phone: data.phone || null, 
+        address: data.address || null 
+      },
       select: { id: true, phone: true, address: true }
     });
   }
