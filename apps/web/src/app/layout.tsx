@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast"; // TAMBAHKAN IMPORT INI
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// PERBAIKAN: SEO dan Judul Website
 export const metadata: Metadata = {
-  title: "Stack Plus Studio",
-  description: "Core Engine V1.0",
+  title: "Bank Sampah | Sobat Banjar Arum Berseri",
+  description: "Platform digital pengelolaan Bank Sampah Desa Banjar Arum.",
 };
 
 export default function RootLayout({
@@ -16,10 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // PERBAIKAN: Mengubah lang="en" menjadi "id" untuk SEO Indonesia
+    <html lang="id"> 
       <body className={inter.className}>
         {children}
-        <Toaster position="top-center" reverseOrder={false} /> {/* TAMBAHKAN INI */}
+        <Toaster position="top-center" reverseOrder={false} />
       </body>
     </html>
   );
