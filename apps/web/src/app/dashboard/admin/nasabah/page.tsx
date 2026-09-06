@@ -74,7 +74,6 @@ export default function AdminNasabahPage() {
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
-  // Helper untuk menghasilkan array nomor halaman (dengan elipsis)
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 5) {
@@ -92,6 +91,7 @@ export default function AdminNasabahPage() {
   };
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone: string) => /^[0-9]{9,}$/.test(phone); 
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ADD' | 'EDIT') => {
     const value = e.target.value;
@@ -104,8 +104,18 @@ export default function AdminNasabahPage() {
     }
   };
 
-  const isAddFormValid = addData.name.trim() !== '' && validateEmail(addData.email) && addData.password.length >= 6 && addData.password.trim() !== '' && addData.phone.trim() !== '' && addData.address.trim() !== '';
-  const isEditFormValid = validateEmail(editData.email) && editData.phone.trim() !== '' && editData.address.trim() !== '';
+  const isAddFormValid = 
+    addData.name.trim() !== '' && 
+    validateEmail(addData.email) && 
+    addData.password.length >= 6 && 
+    validatePhone(addData.phone) && 
+    addData.address.trim() !== '';
+
+  const isEditFormValid = 
+    validateEmail(editData.email) && 
+    validatePhone(editData.phone) && 
+    editData.address.trim() !== '' &&
+    (editData.password === '' || editData.password.length >= 6); 
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,7 +139,15 @@ export default function AdminNasabahPage() {
   };
 
   const openEditModal = (user: Nasabah) => {
-    setEditData({ id: user.id, name: user.name, email: user.email, password: '', phone: user.phone || '', address: user.address || '', status: user.status });
+    setEditData({ 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      password: '', 
+      phone: user.phone || '', 
+      address: user.address || '', 
+      status: user.status 
+    });
     setEditEmailError('');
     setIsEditModalOpen(true);
   };
@@ -233,7 +251,6 @@ export default function AdminNasabahPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {/* Perbaikan: Menggunakan currentUsers (data yang sudah dipotong paginasi) */}
                 {currentUsers.map((item) => {
                   const date = new Date(item.createdAt);
                   return (
@@ -271,7 +288,6 @@ export default function AdminNasabahPage() {
             </table>
           </div>
           
-          {/* Fungsionalitas Paginasi Lengkap Sesuai Figma */}
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-sm">
             <span className="text-gray-500 font-medium">
               Menampilkan {totalItems === 0 ? 0 : startIndex + 1}-{endIndex} dari {totalItems} data
@@ -362,9 +378,20 @@ export default function AdminNasabahPage() {
                     <p className="text-xs font-medium text-red-500 mt-1">Password minimal 6 karakter</p>
                   )}
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">No. Telp</label>
-                  <Input type="tel" placeholder="081387383482" value={addData.phone} onChange={e => setAddData({...addData, phone: e.target.value})} required className="h-11 shadow-sm border-gray-200 focus-visible:ring-[#004d33]/20" />
+                  <Input 
+                    type="tel" 
+                    placeholder="081387383482" 
+                    value={addData.phone} 
+                    onChange={e => setAddData({...addData, phone: e.target.value})} 
+                    required 
+                    className="h-11 shadow-sm border-gray-200 focus-visible:ring-[#004d33]/20" 
+                  />
+                  {addData.phone.length > 0 && !validatePhone(addData.phone) && (
+                    <p className="text-xs font-medium text-red-500 mt-1">Minimal 9 digit & hanya angka</p>
+                  )}
                 </div>
                 
                 <div className="space-y-1.5">
@@ -403,18 +430,40 @@ export default function AdminNasabahPage() {
                   <label className="text-sm font-semibold text-gray-700">Nama</label>
                   <Input value={editData.name} disabled className="h-11 bg-gray-50 text-gray-500 border-gray-200 shadow-sm cursor-not-allowed" required />
                 </div>
+                
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">Email</label>
                   <Input type="email" value={editData.email} onChange={e => handleEmailChange(e, 'EDIT')} required className={`h-11 shadow-sm ${editEmailError ? 'border-red-500 focus-visible:ring-red-500' : 'border-gray-200 focus-visible:ring-[#004d33]/20'}`} />
                   {editEmailError && <p className="text-xs font-medium text-red-500 mt-1">{editEmailError}</p>}
                 </div>
+                
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">Password</label>
-                  <Input type="password" placeholder="Isi hanya jika ingin mengganti sandi" value={editData.password} onChange={e => setEditData({...editData, password: e.target.value})} className="h-11 shadow-sm border-gray-200 focus-visible:ring-[#004d33]/20" />
+                  <Input 
+                    type="password" 
+                    placeholder="Isi hanya jika ingin mengganti sandi" 
+                    value={editData.password} 
+                    onChange={e => setEditData({...editData, password: e.target.value})} 
+                    className={`h-11 shadow-sm ${editData.password.length > 0 && editData.password.length < 6 ? 'border-red-500 focus-visible:ring-red-500' : 'border-gray-200 focus-visible:ring-[#004d33]/20'}`} 
+                  />
+                  {editData.password.length > 0 && editData.password.length < 6 && (
+                    <p className="text-xs font-medium text-red-500 mt-1">Password minimal 6 karakter</p>
+                  )}
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">No. Telp</label>
-                  <Input type="tel" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} required className="h-11 shadow-sm border-gray-200 focus-visible:ring-[#004d33]/20" />
+                  <Input 
+                    type="tel" 
+                    placeholder="081387383482" 
+                    value={editData.phone} 
+                    onChange={e => setEditData({...editData, phone: e.target.value})} 
+                    required 
+                    className={`h-11 shadow-sm ${!validatePhone(editData.phone) && editData.phone.length > 0 ? 'border-red-500 focus-visible:ring-red-500' : 'border-gray-200 focus-visible:ring-[#004d33]/20'}`} 
+                  />
+                  {!validatePhone(editData.phone) && editData.phone.length > 0 && (
+                    <p className="text-xs font-medium text-red-500 mt-1">Minimal 9 digit & hanya angka</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">

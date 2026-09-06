@@ -11,7 +11,7 @@ import { LayoutGrid, History, User, LogOut, Bell, Menu, X } from 'lucide-react';
 export default function NasabahLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{name: string, nasabahId: string} | null>(null);
+  const [user, setUser] = useState<{name: string, nasabahId: string, avatar?: string} | null>(null);
 
   // State untuk Hamburger Menu Mobile
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,8 +153,12 @@ export default function NasabahLayout({ children }: { children: React.ReactNode 
                 <p className="text-[11px] text-gray-500 font-medium">{user?.nasabahId || '-'}</p>
               </div>
               <div className="relative">
-                <div className="w-10 h-10 md:w-11 md:h-11 bg-[#F5F7F0] rounded-full flex items-center justify-center font-bold text-gray-700 text-sm md:text-base border border-[#E8EBE0] group-hover:border-[#004d33] transition-colors shadow-sm">
-                  {getInitials(user?.name)}
+                <div className="w-10 h-10 md:w-11 md:h-11 bg-[#F5F7F0] rounded-full flex items-center justify-center font-bold text-gray-700 text-sm md:text-base border border-[#E8EBE0] group-hover:border-[#004d33] transition-colors shadow-sm overflow-hidden relative">
+                  {user?.avatar ? ( // <-- PERBAIKAN: Cek apakah user punya avatar
+                    <Image src={user.avatar} alt="Profile" fill className="object-cover" />
+                  ) : (
+                    getInitials(user?.name)
+                  )}
                 </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white"></span>
               </div>

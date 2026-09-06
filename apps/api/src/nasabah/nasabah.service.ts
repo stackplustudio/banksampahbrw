@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -8,9 +10,21 @@ export class NasabahService {
   async getDashboard(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { name: true, nasabahId: true, balance: true }
+      select: { 
+        name: true, 
+        nasabahId: true, 
+        balance: true, 
+        status: true, 
+        avatar: true // <-- WAJIB DITAMBAHKAN DI SINI
+      }
     });
+
     if (!user) throw new NotFoundException('User tidak ditemukan');
+    
+    // TAMBAHKAN BARIS INI: Jika status nonaktif, lempar error 401
+    if (user.status === 'NONAKTIF') {
+      throw new UnauthorizedException('Akun Anda telah dinonaktifkan.');
+    }
 
     const setoranAgg = await this.prisma.deposit.aggregate({
       where: { nasabahId: userId },
@@ -39,7 +53,6 @@ export class NasabahService {
   }
 
   async getHistory(userId: string) {
-    // Ambil data menggunakan Promise.all untuk eksekusi yang lebih cepat & paralel
     const [deposits, withdrawals] = await Promise.all([
       this.prisma.deposit.findMany({
         where: { nasabahId: userId },
@@ -52,13 +65,16 @@ export class NasabahService {
       })
     ]);
 
-    // Format Data Transaksi
     const formattedDeposits = deposits.map(d => ({
       id: d.id,
       type: 'SETORAN',
       date: d.createdAt,
       nominal: d.totalAmount,
-      items: d.items.map(i => ({ name: i.wasteType.name, weight: i.weight }))
+      items: d.items.map(i => ({ 
+        name: i.wasteType.name, 
+        weight: i.weight,
+        subtotal: i.subtotal
+      }))
     }));
 
     const formattedWithdrawals = withdrawals.map(w => ({
@@ -69,22 +85,48 @@ export class NasabahService {
       items: [{ name: 'Penarikan tunai', weight: 0 }]
     }));
 
-    // Gabungkan dan urutkan kembali untuk memastikan sorting absolut berdasarkan waktu terbaru
     return [...formattedDeposits, ...formattedWithdrawals].sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  async updateProfile(userId: string, data: { phone: string; address: string }) {
-    // Memastikan record user masih ada sebelum melakukan update
+  // --- PERBAIKAN: Fungsi getProfile ditambahkan ---
+  // ... fungsi getDashboard dan getHistory biarkan saja
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        nasabahId: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        avatar: true // WAJIB DITAMBAHKAN AGAR GAMBAR MUNCUL DI FRONTEND
+      }
+    });
+
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    return { user };
+  }
+
+  async updateProfile(userId: string, data: { phone: string; address: string; avatar?: string }) {
     const exists = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!exists) throw new NotFoundException('User tidak valid');
 
+    const updateData: any = {
+      phone: data.phone || null, 
+      address: data.address || null 
+    };
+
+    // Jika ada kiriman avatar (Base64 string), masukkan ke data update
+    if (data.avatar) {
+      updateData.avatar = data.avatar;
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
-      data: { 
-        phone: data.phone || null, 
-        address: data.address || null 
-      },
-      select: { id: true, phone: true, address: true }
+      data: updateData,
+      select: { id: true, phone: true, address: true, avatar: true }
     });
   }
 }

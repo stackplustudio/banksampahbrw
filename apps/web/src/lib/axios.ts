@@ -2,12 +2,9 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 export const api = axios.create({
-  // Jika di Vercel, akan pakai URL Render. Jika lokal, otomatis ke 3001.
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
-  withCredentials: true,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000', // Pastikan port sesuai dengan backend-mu
 });
 
-// 1. Menyelipkan token ke setiap request (Bawaan)
 api.interceptors.request.use((config) => {
   const token = Cookies.get('token');
   if (token) {
@@ -16,18 +13,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 2. [BARU] Menangani Error 401 secara otomatis
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Jika backend merespons dengan 401 (Unauthorized)
-    if (error.response && error.response.status === 401) {
-      // Hapus token yang rusak/kadaluarsa dari browser
+    // Jika backend menolak akses (Token kedaluwarsa atau Akun Dimatikan)
+    if (error.response?.status === 401) {
       Cookies.remove('token');
       
-      // Paksa alihkan pengguna ke halaman login
       if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login';
+        // 1. Jika sedang mencoba login, JANGAN di-refresh agar pesan merah tetap tayang terus!
+        if (window.location.pathname !== '/auth/login') {
+          
+          // 2. Jika sedang di dalam dashboard, beri waktu 3 detik agar toast error bisa dibaca
+          setTimeout(() => {
+            window.location.href = '/auth/login';
+          }, 3000); 
+          
+        }
       }
     }
     return Promise.reject(error);

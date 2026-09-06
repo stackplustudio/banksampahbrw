@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import toast from 'react-hot-toast';
-import { Calendar, Download, Plus, FolderOpen, ChevronLeft, ChevronRight, X, ChevronDown, Search } from 'lucide-react';
+import { Calendar, Download, Plus, FolderOpen, ChevronLeft, ChevronRight, X, ChevronDown } from 'lucide-react';
 
 // --- Komponen Custom Searchable Dropdown ---
 function SearchableSelect({ options, value, onChange, placeholder }: { options: {value: string, label: string}[], value: string, onChange: (v: string) => void, placeholder: string }) {
@@ -32,7 +32,7 @@ function SearchableSelect({ options, value, onChange, placeholder }: { options: 
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
-          {filtered.map(o => (
+          {filtered.slice(0, 10).map(o => ( // PERBAIKAN: Limit 10 items
             <div 
               key={o.value} 
               className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm border-b border-gray-50 last:border-0"
@@ -74,7 +74,6 @@ export default function AdminPenarikanPage() {
         api.get('/withdrawals'),
         api.get('/users')
       ]);
-      // Pastikan data diurutkan dari yang terbaru
       const sortedWithdrawals = wdRes.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setWithdrawals(sortedWithdrawals);
       setNasabahList(userRes.data.filter((u: any) => u.status === 'AKTIF'));
@@ -193,24 +192,25 @@ export default function AdminPenarikanPage() {
             />
           </div>
           
-          {/* Filter Nasabah (Dinamis dari Database) */}
-          <div className="relative w-56">
-            <select 
-              className="appearance-none w-full h-11 rounded-md border border-gray-200 bg-white pl-4 pr-10 text-sm outline-none shadow-sm focus:ring-2 focus:ring-[#004d33]/20 cursor-pointer text-gray-600 font-medium"
-              value={filterNasabahId}
-              onChange={(e) => setFilterNasabahId(e.target.value)}
-            >
-              <option value="">Semua Nasabah</option>
-              {nasabahList.map(n => (
-                <option key={n.id} value={n.id}>{n.name}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+          {/* PERBAIKAN: Filter Nasabah dengan Searchable Select */}
+          <div className="relative w-64">
+             <SearchableSelect 
+               options={[{value: '', label: 'Semua Nasabah'}, ...nasabahOptions]} 
+               value={filterNasabahId} 
+               onChange={setFilterNasabahId} 
+               placeholder="Cari Nasabah..." 
+             />
           </div>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" onClick={handleExportExcel} className="flex gap-2 items-center border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 h-11">
+          {/* PERBAIKAN: Tombol Eksport disabled jika tanggal kosong */}
+          <Button 
+            variant="outline" 
+            onClick={handleExportExcel} 
+            disabled={!startDate || !endDate} 
+            className="flex gap-2 items-center border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 h-11"
+          >
             <Download size={16} /> Eksport
           </Button>
           <Button onClick={() => setIsModalOpen(true)} className="flex gap-2 items-center bg-[#004d33] hover:bg-[#003322] text-white shadow-sm h-11">
@@ -267,7 +267,7 @@ export default function AdminPenarikanPage() {
             </table>
           </div>
           
-          {/* Paginasi Visual (Sama dengan Nasabah) */}
+          {/* Paginasi Visual */}
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white text-sm">
             <span className="text-gray-500 font-medium">
               Menampilkan {totalItems === 0 ? 0 : startIndex + 1}-{endIndex} dari {totalItems} data
@@ -349,7 +349,6 @@ export default function AdminPenarikanPage() {
 
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-gray-700">Sisa Saldo</label>
-                  {/* Styling Angka Besar Sesuai Figma */}
                   <div className="text-[40px] leading-none font-bold text-gray-900 tracking-tight py-2">
                     {selectedNasabah ? currentBalance.toLocaleString('id-ID') : '0'}
                   </div>
@@ -365,7 +364,6 @@ export default function AdminPenarikanPage() {
                     required 
                     className={`h-11 shadow-sm transition-colors ${isInsufficient ? "border-red-500 focus-visible:ring-red-500 bg-red-50/30 text-red-900" : "border-gray-200 focus-visible:ring-[#004d33]/20"}`}
                   />
-                  {/* Error State Merah Sesuai Figma */}
                   {isInsufficient && <p className="text-xs font-semibold text-red-500 mt-1.5">Jumlah saldo tidak mencukupi</p>}
                 </div>
 

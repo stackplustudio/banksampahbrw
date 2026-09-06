@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,11 +16,19 @@ export class AuthService {
       where: { email },
     });
 
+    // Jika user ditemukan dan password cocok
     if (user && (await bcrypt.compare(pass, user.password))) {
+      
+      // --- PERBAIKAN: BLOKIR AKUN NONAKTIF ---
+      if (user.status === 'NONAKTIF') {
+        throw new UnauthorizedException('Akun tersebut sudah dimatikan oleh admin.');
+      }
+      // ----------------------------------------
+
       const { password, ...result } = user;
       return result;
     }
-    return null;
+    return null; // Akan memicu pesan generic "Unauthorized" jika email/password salah
   }
 
   // 2. Generate Tokens (Access & Refresh)

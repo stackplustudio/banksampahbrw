@@ -28,6 +28,20 @@ export default function NasabahNotifikasi() {
             nominal: item.nominal,
             timestamp: date.getTime(),
           });
+        // } else if (item.type === 'SETORAN') {
+        //   item.items.forEach((i: any, idx: number) => {
+        //     formattedNotifs.push({
+        //       id: `${item.id}-${idx}`,
+        //       type: 'SETORAN',
+        //       title: 'Setoran',
+        //       desc: `${i.name} - ${i.weight} kg - ${dateStr}, ${timeStr}`,
+        //       nominal: i.weight * 2000, // Menyesuaikan dengan logika di halaman history
+        //       timestamp: date.getTime(),
+        //     });
+        //   });
+        // }
+
+        // Cari di dalam useEffect, saat if (item.type === 'SETORAN')
         } else if (item.type === 'SETORAN') {
           item.items.forEach((i: any, idx: number) => {
             formattedNotifs.push({
@@ -35,7 +49,7 @@ export default function NasabahNotifikasi() {
               type: 'SETORAN',
               title: 'Setoran',
               desc: `${i.name} - ${i.weight} kg - ${dateStr}, ${timeStr}`,
-              nominal: i.weight * 2000, // Menyesuaikan dengan logika di halaman history
+              nominal: i.subtotal, // PERBAIKAN: Gunakan subtotal asli
               timestamp: date.getTime(),
             });
           });

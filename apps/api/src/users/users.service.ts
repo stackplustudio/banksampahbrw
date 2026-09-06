@@ -21,11 +21,11 @@ export class UsersService {
     const role = (createUserDto.role as Role) || Role.NASABAH;
     let generatedNasabahId = createUserDto.nasabahId;
 
-    // Logika Auto-Generate ID (Diurutkan berdasarkan data terbaru agar aman dari bug sorting string)
+    // Logika Auto-Generate ID (Diurutkan berdasarkan data terbaru)
     if (role === Role.NASABAH && !generatedNasabahId) {
       const lastNasabah = await this.prisma.user.findFirst({
         where: { role: Role.NASABAH, nasabahId: { not: null } },
-        orderBy: { createdAt: 'desc' }, // Perbaikan: Gunakan waktu pembuatan
+        orderBy: { createdAt: 'desc' }, 
         select: { nasabahId: true }
       });
 
@@ -77,13 +77,14 @@ export class UsersService {
     });
 
     return users.map(user => {
-      const totalSetoranKg = user.deposits.reduce((sum, d) => sum + d.totalWeight, 0);
-      const totalHargaRp = user.deposits.reduce((sum, d) => sum + d.totalAmount, 0);
+      // PERBAIKAN: Menggunakan Number() untuk mencegah bug kalkulasi string/NaN
+      const totalSetoranKg = user.deposits.reduce((sum, d) => sum + Number(d.totalWeight), 0);
+      const totalHargaRp = user.deposits.reduce((sum, d) => sum + Number(d.totalAmount), 0);
       
       const { deposits, ...userData } = user;
       return {
         ...userData,
-        totalSetoranKg,
+        totalSetoranKg: Number(totalSetoranKg.toFixed(2)), // Aman dari desimal panjang
         totalHargaRp
       };
     });
@@ -113,7 +114,8 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: dataToUpdate,
-      select: { id: true, nasabahId: true, email: true, name: true, status: true }
+      // PERBAIKAN: Memastikan phone dan address dikembalikan setelah update
+      select: { id: true, nasabahId: true, email: true, name: true, phone: true, address: true, status: true }
     });
   }
 

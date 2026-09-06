@@ -94,6 +94,18 @@ export default function NasabahHistory() {
                   );
                 }
                 
+                // if (activeTab === 'SETORAN' && item.type === 'SETORAN') {
+                //   return item.items.map((i:any, j:number) => (
+                //     <tr key={`${item.id}-${j}`} className="hover:bg-gray-50/50 transition-colors">
+                //       <td className="px-6 py-4">{i.name}</td>
+                //       <td className="px-6 py-4">{i.weight} kg</td>
+                //       <td className="px-6 py-4 text-gray-500">{dateStr}</td>
+                //       <td className="px-6 py-4 text-gray-500">{timeStr}</td>
+                //       <td className="px-6 py-4 text-right font-medium text-green-600">+ Rp {(i.weight * 2000).toLocaleString('id-ID')}</td>
+                //     </tr>
+                //   ));
+                // }
+
                 if (activeTab === 'SETORAN' && item.type === 'SETORAN') {
                   return item.items.map((i:any, j:number) => (
                     <tr key={`${item.id}-${j}`} className="hover:bg-gray-50/50 transition-colors">
@@ -101,7 +113,8 @@ export default function NasabahHistory() {
                       <td className="px-6 py-4">{i.weight} kg</td>
                       <td className="px-6 py-4 text-gray-500">{dateStr}</td>
                       <td className="px-6 py-4 text-gray-500">{timeStr}</td>
-                      <td className="px-6 py-4 text-right font-medium text-green-600">+ Rp {(i.weight * 2000).toLocaleString('id-ID')}</td>
+                      {/* PERBAIKAN: Menggunakan i.subtotal asli dari backend */}
+                      <td className="px-6 py-4 text-right font-medium text-green-600">+ Rp {i.subtotal?.toLocaleString('id-ID') || 0}</td>
                     </tr>
                   ));
                 }

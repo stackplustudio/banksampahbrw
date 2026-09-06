@@ -14,6 +14,45 @@ interface WasteItemInput {
   weight: string;
 }
 
+// --- Komponen Custom Searchable Dropdown ---
+function SearchableSelect({ options, value, onChange, placeholder }: { options: {value: string, label: string}[], value: string, onChange: (v: string) => void, placeholder: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const selected = options.find(o => o.value === value);
+  const displayValue = isOpen ? search : (selected ? selected.label : '');
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="relative w-full">
+      <Input 
+        value={displayValue}
+        onChange={e => { setSearch(e.target.value); setIsOpen(true); onChange(''); }}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        placeholder={placeholder}
+        className="w-full bg-white h-11 pr-10 shadow-sm border-gray-200 focus-visible:ring-[#004d33]/20"
+        required={!value}
+      />
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+          {filtered.slice(0, 10).map(o => ( // PERBAIKAN: Limit 10 items
+            <div 
+              key={o.value} 
+              className="px-4 py-2.5 cursor-pointer hover:bg-gray-50 text-sm border-b border-gray-50 last:border-0"
+              onMouseDown={() => { onChange(o.value); setSearch(''); setIsOpen(false); }}
+            >
+              {o.label}
+            </div>
+          ))}
+          {filtered.length === 0 && <div className="p-3 text-sm text-gray-500 text-center">Tidak ditemukan</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminSetoranPage() {
   const [deposits, setDeposits] = useState<any[]>([]);
   const [nasabahList, setNasabahList] = useState<any[]>([]);
@@ -163,6 +202,8 @@ export default function AdminSetoranPage() {
     XLSX.writeFile(workbook, `Data_Setoran_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  const nasabahOptions = nasabahList.map(n => ({ value: n.id, label: `${n.name} (${n.nasabahId})` }));
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       
@@ -187,24 +228,25 @@ export default function AdminSetoranPage() {
             />
           </div>
           
-          {/* Filter Nasabah (Dinamis dari Database) */}
-          <div className="relative w-56">
-            <select 
-              className="appearance-none w-full h-11 rounded-md border border-gray-200 bg-white pl-4 pr-10 text-sm outline-none shadow-sm focus:ring-2 focus:ring-[#004d33]/20 cursor-pointer text-gray-600 font-medium"
-              value={filterNasabahId}
-              onChange={(e) => setFilterNasabahId(e.target.value)}
-            >
-              <option value="">Semua Nasabah</option>
-              {nasabahList.map(n => (
-                <option key={n.id} value={n.id}>{n.name}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+          {/* PERBAIKAN: Filter Nasabah dengan Searchable Select */}
+          <div className="relative w-64">
+             <SearchableSelect 
+               options={[{value: '', label: 'Semua Nasabah'}, ...nasabahOptions]} 
+               value={filterNasabahId} 
+               onChange={setFilterNasabahId} 
+               placeholder="Cari Nasabah..." 
+             />
           </div>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="outline" onClick={handleExportExcel} className="flex gap-2 items-center border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 h-11">
+          {/* PERBAIKAN: Tombol Eksport disabled jika tanggal kosong */}
+          <Button 
+            variant="outline" 
+            onClick={handleExportExcel} 
+            disabled={!startDate || !endDate} 
+            className="flex gap-2 items-center border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 h-11"
+          >
             <Download size={16} /> Eksport
           </Button>
           <Button onClick={() => setIsAddModalOpen(true)} className="flex gap-2 items-center bg-[#004d33] hover:bg-[#003322] text-white shadow-sm h-11">
@@ -343,20 +385,12 @@ export default function AdminSetoranPage() {
                 {/* Pilih Nama Nasabah */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-gray-700">Nama</label>
-                  <div className="relative">
-                    <select 
-                      className="appearance-none w-full h-11 rounded-md border border-gray-200 bg-white px-3.5 pr-10 text-sm outline-none shadow-sm focus:ring-2 focus:ring-[#004d33]/20 cursor-pointer text-gray-700 font-medium"
-                      value={selectedNasabahId}
-                      onChange={(e) => setSelectedNasabahId(e.target.value)}
-                      required
-                    >
-                      <option value="">Pilih nama nasabah</option>
-                      {nasabahList.map(n => (
-                        <option key={n.id} value={n.id}>{n.name} ({n.nasabahId})</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                  </div>
+                  <SearchableSelect 
+                    options={nasabahOptions} 
+                    value={selectedNasabahId} 
+                    onChange={setSelectedNasabahId} 
+                    placeholder="Pilih nama nasabah" 
+                  />
                 </div>
 
                 {/* Jenis & Berat Sampah */}
@@ -479,7 +513,10 @@ export default function AdminSetoranPage() {
                     <tr key={item.id} className="text-gray-700">
                       <td className="py-3.5 font-medium">{item.wasteType?.name}</td>
                       <td className="py-3.5 text-center">{item.weight}</td>
-                      <td className="py-3.5 text-center text-gray-500">Rp. {item.wasteType?.pricePerKg?.toLocaleString('id-ID')}</td>
+                      {/* PERBAIKAN: Rendering Harga Historis (Subtotal / Weight) */}
+                      <td className="py-3.5 text-center text-gray-500">
+                        Rp. {item.weight > 0 ? (item.subtotal / item.weight).toLocaleString('id-ID') : '0'}
+                      </td>
                       <td className="py-3.5 text-right font-medium text-gray-900">Rp. {item.subtotal?.toLocaleString('id-ID')}</td>
                     </tr>
                   ))}

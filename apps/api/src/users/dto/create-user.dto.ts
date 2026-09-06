@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, Matches } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Format email tidak valid' })
@@ -10,9 +10,9 @@ export class CreateUserDto {
   name: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty({ message: 'Password tidak boleh kosong' })
   @MinLength(6, { message: 'Password minimal 6 karakter' })
-  password?: string;
+  password: string;
 
   @IsString()
   @IsOptional()
@@ -23,10 +23,11 @@ export class CreateUserDto {
   nasabahId?: string;
 
   @IsString()
-  @IsOptional()
-  phone?: string;
+  @IsNotEmpty({ message: 'Nomor telepon tidak boleh kosong' })
+  @Matches(/^[0-9]{9,}$/, { message: 'Nomor telepon harus berupa angka dan minimal 9 digit' })
+  phone: string;
 
   @IsString()
-  @IsOptional()
-  address?: string;
+  @IsNotEmpty({ message: 'Alamat tidak boleh kosong' })
+  address: string;
 }
